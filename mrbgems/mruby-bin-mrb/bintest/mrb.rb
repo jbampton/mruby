@@ -13,7 +13,7 @@ end
 assert('mrb can execute .mrb files') do
   script = Tempfile.new(['test', '.rb'])
   bin = Tempfile.new(['test', '.mrb'])
-  File.write(script.path, 'puts "hello from mrb"')
+  File.write(script.path, 'print "hello from mrb"')
   system("#{cmd('mrbc')} -o #{bin.path} #{script.path}")
   o = `#{cmd('mrb')} #{bin.path}`.strip
   assert_equal 'hello from mrb', o
@@ -52,7 +52,7 @@ assert('mrb -r option loads library') do
   main_mrb = Tempfile.new(['main', '.mrb'])
 
   File.write(lib.path, '$lib_loaded = true')
-  File.write(main.path, 'puts $lib_loaded')
+  File.write(main.path, 'print $lib_loaded')
   system("#{cmd('mrbc')} -o #{lib_mrb.path} #{lib.path}")
   system("#{cmd('mrbc')} -o #{main_mrb.path} #{main.path}")
   o = `#{cmd('mrb')} -r #{lib_mrb.path} #{main_mrb.path}`.strip
