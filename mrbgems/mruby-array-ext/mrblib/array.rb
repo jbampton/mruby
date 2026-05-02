@@ -686,9 +686,8 @@ class Array
         i += 1
       end
     else
-      if n > 0
+      if state = __combination_init(n, permutation)
         # Use C iterator for complex cases
-        state = __combination_init(n, permutation)
         while tmp = __combination_next(state)
           yield tmp
         end
