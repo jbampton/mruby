@@ -818,7 +818,14 @@ static unrounded uscale(uint64_t x, scaler c)
   mul64(x, c.pm.hi, &hi, &mid);
 
   uint64_t sticky = 1;
-  uint64_t mask = (1ULL << (c.s & 63)) - 1;
+
+  if (c.s >= 64) {
+    /* x * 10^p < 2^(c.s-64), i.e. < 1 in the unrounded "1.0 = 4" encoding;
+       rounds to 0 with sticky=1 */
+    return sticky;
+  }
+
+  uint64_t mask = (1ULL << c.s) - 1;
 
   if ((hi & mask) == 0) {
     mul64(x, c.pm.lo, &mid2, &lo_unused);
@@ -886,6 +893,7 @@ static const uint64_t uint64_pow10[20] = {
 
 static int count_digits(uint64_t d)
 {
+  if (d == 0) return 1;  /* clz64(0) is UB; "0" is one digit */
   int nd = log10_pow2(bits_len64(d));
   return nd + (d >= uint64_pow10[nd] ? 1 : 0);
 }
