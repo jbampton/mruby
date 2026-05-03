@@ -766,6 +766,7 @@ first_set_walk(const re_inst *code, uint32_t code_len,
       pc = code[pc].offset;
       continue;
     case RE_CHAR:
+      if (code[pc].a >= 128) return FALSE;  /* non-ASCII: bm covers ASCII only */
       bm[code[pc].a >> 3] |= (1 << (code[pc].a & 7));
       return TRUE;
     case RE_CLASS: {
