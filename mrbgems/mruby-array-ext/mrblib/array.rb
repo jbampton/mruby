@@ -673,20 +673,20 @@ class Array
     __repeated_combination(n, true, &block)
   end
 
-  def __repeated_combination(n, permutation, &block)
-    n = n.__to_int
-    case n
+  def __repeated_combination(k, permutation, &block)
+    k = k.__to_int
+    case k
     when 0
       yield []
     when 1
-      # Keep fast Ruby path for n=1
+      # Keep fast Ruby path for k=1
       i = 0
       while i < self.size
         yield [self[i]]
         i += 1
       end
     else
-      if state = __combination_init(n, permutation)
+      if state = __combination_init(k, permutation)
         # Use C iterator for complex cases
         while tmp = __combination_next(state)
           yield tmp
