@@ -20,7 +20,17 @@ typedef struct mrb_shared_array {
   mrb_value *ptr;
 } mrb_shared_array;
 
-#if defined(MRB_32BIT) && defined(MRB_NO_BOXING) && (!defined(MRB_USE_FLOAT32) || defined(MRB_INT64)) && !defined(MRB_ARY_NO_EMBED)
+/* On 32-bit platforms whose ABI gives 8-byte members 8-byte alignment
+   (ARM, MIPS, xtensa, ...), an embedded mrb_value array forces 8-byte
+   alignment of the inner union, padding the heap-form layout and
+   inflating struct size past the 5-word RVALUE limit.  Disable embedding
+   whenever mrb_value contains an 8-byte aligned member: nan-boxing
+   (uint64_t), or no-boxing with int64_t/double inside the union. */
+#if defined(MRB_32BIT) && \
+    (defined(MRB_NAN_BOXING) || \
+     (defined(MRB_NO_BOXING) && \
+      (!defined(MRB_USE_FLOAT32) || defined(MRB_INT64)))) && \
+    !defined(MRB_ARY_NO_EMBED)
 # define MRB_ARY_NO_EMBED
 #endif
 
