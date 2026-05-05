@@ -32,8 +32,7 @@ typedef khash_t(ary_set) ary_set_t;
 /* Combination state structure for repeated_combination optimization */
 struct mrb_combination_state {
   mrb_int *indices;
-  mrb_int n;
-  mrb_int array_size;
+  mrb_int n, k; /* nPk, nCk */
   mrb_bool permutation;
   mrb_bool finished;
 };
@@ -1541,17 +1540,17 @@ ary_deconstruct(mrb_state *mrb, mrb_value ary)
 static mrb_value
 ary_combination_init(mrb_state *mrb, mrb_value self)
 {
-  mrb_int n;
+  mrb_int k;
   mrb_bool permutation;
 
-  mrb_get_args(mrb, "ib", &n, &permutation);
+  mrb_get_args(mrb, "ib", &k, &permutation);
 #if MRB_INT_MAX > SIZE_MAX
-  if (n > SIZE_MAX) {
+  if (k > SIZE_MAX) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "number too large");
   }
 #endif
 
-  if (n < 1 || RARRAY_LEN(self) < 1) {
+  if (k < 1 || RARRAY_LEN(self) < 1) {
     return mrb_nil_value();
   }
 
@@ -1560,11 +1559,11 @@ ary_combination_init(mrb_state *mrb, mrb_value self)
   Data_Make_Struct(mrb, mrb->object_class, struct mrb_combination_state,
                    &mrb_combination_state_type, state, d);
 
-  state->n = n;
-  state->array_size = RARRAY_LEN(self);
+  state->k = k;
+  state->n = RARRAY_LEN(self);
   state->permutation = permutation;
   state->finished = FALSE;
-  state->indices = (mrb_int*)mrb_calloc(mrb, n, sizeof(mrb_int));
+  state->indices = (mrb_int*)mrb_calloc(mrb, k, sizeof(mrb_int));
 
   return mrb_obj_value(d);
 }
@@ -1583,30 +1582,30 @@ ary_combination_next(mrb_state *mrb, mrb_value self)
   if (state->finished) return mrb_nil_value();
 
   /* Validate array hasn't been modified during iteration */
-  if (RARRAY_LEN(self) != state->array_size) {
+  if (RARRAY_LEN(self) != state->n) {
     mrb_raise(mrb, E_RUNTIME_ERROR, "array modified during iteration");
   }
 
   /* Validate current indices are still in bounds */
-  for (mrb_int i = 0; i < state->n; i++) {
-    if (state->indices[i] >= state->array_size) {
+  for (mrb_int i = 0; i < state->k; i++) {
+    if (state->indices[i] >= state->n) {
       state->finished = TRUE;
       return mrb_nil_value();
     }
   }
 
   /* Build current combination */
-  mrb_value result = mrb_ary_new_capa(mrb, state->n);
+  mrb_value result = mrb_ary_new_capa(mrb, state->k);
   const mrb_value *p = RARRAY_PTR(self);
-  for (mrb_int i = 0; i < state->n; i++) {
+  for (mrb_int i = 0; i < state->k; i++) {
     mrb_ary_push(mrb, result, p[state->indices[i]]);
   }
 
-  mrb_int pos = state->n - 1;
+  mrb_int pos = state->k - 1;
 
   while (pos >= 0) {
     state->indices[pos]++;
-    if (state->indices[pos] < state->array_size) break;
+    if (state->indices[pos] < state->n) break;
     pos--;
   }
 
@@ -1616,7 +1615,7 @@ ary_combination_next(mrb_state *mrb, mrb_value self)
   else {
     /* Reset dependent indices */
     mrb_int reset = state->permutation ? 0 : state->indices[pos];
-    for (pos++; pos < state->n; pos++) {
+    for (pos++; pos < state->k; pos++) {
       state->indices[pos] = reset;
     }
   }
