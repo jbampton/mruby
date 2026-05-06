@@ -1535,6 +1535,8 @@ enum {
   comb_finished             = 0,
   comb_repeated_permutation = 1,
   comb_repeated_combination = 2,
+  comb_permutation          = 3,
+  comb_combination          = 4
 };
 
 /*
@@ -1566,6 +1568,18 @@ ary_combination_init(mrb_state *mrb, mrb_value self)
   case MRB_SYM(repeated_combination):
     mode = comb_repeated_combination;
     break;
+  case MRB_SYM(permutation):
+    if (k > RARRAY_LEN(self)) {
+      return mrb_nil_value();
+    }
+    mode = comb_permutation;
+    break;
+  case MRB_SYM(combination):
+    if (k > RARRAY_LEN(self)) {
+      return mrb_nil_value();
+    }
+    mode = comb_combination;
+    break;
   default:
     mrb_raise(mrb, E_ARGUMENT_ERROR, "wrong mode");
   }
@@ -1580,7 +1594,24 @@ ary_combination_init(mrb_state *mrb, mrb_value self)
   state->mode = mode;
   state->indices = (mrb_int*)mrb_calloc(mrb, k, sizeof(mrb_int));
 
+  if (mode == comb_permutation || mode == comb_combination) {
+    for (mrb_int i = 0; i < k; i++) {
+      state->indices[i] = i;
+    }
+  }
+
   return mrb_obj_value(d);
+}
+
+static void
+adjust_next_permutation_index(struct mrb_combination_state *state, mrb_int i)
+{
+  for (mrb_int j = i - 1; j >= 0; j--) {
+    if (state->indices[i] == state->indices[j]) {
+      state->indices[i]++;
+      j = i;
+    }
+  }
 }
 
 /*
@@ -1626,6 +1657,36 @@ ary_combination_next(mrb_state *mrb, mrb_value self)
         mrb_int reset = (state->mode == comb_repeated_permutation) ? 0 : state->indices[i];
         for (i++; i < state->k; i++) {
           state->indices[i] = reset;
+        }
+        return result;
+      }
+    }
+    break;
+  case comb_permutation:
+    for (mrb_int i = state->k - 1; i >= 0; i--) {
+      state->indices[i]++;
+
+      // adjust so that it does not overlap with the leading index
+      adjust_next_permutation_index(state, i);
+
+      if (state->indices[i] < state->n) {
+        // adjust all trailing indexes to complete the function
+        for (i++; i < state->k; i++) {
+          state->indices[i] = 0;
+          adjust_next_permutation_index(state, i);
+        }
+        return result;
+      }
+    }
+    break;
+  case comb_combination:
+    for (mrb_int i = state->k - 1; i >= 0; i--) {
+      state->indices[i]++;
+
+      if (state->indices[i] <= state->n - state->k + i) {
+        // replace each overflowed indices with an index incremented by 1 from the previous one
+        for (i++; i < state->k; i++) {
+          state->indices[i] = state->indices[i - 1] + 1;
         }
         return result;
       }

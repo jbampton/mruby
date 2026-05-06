@@ -450,27 +450,7 @@ class Array
   #  a.permutation(0).to_a #=> [[]] # one permutation of length 0
   #  a.permutation(4).to_a #=> []   # no permutations of length 4
   def permutation(n=self.size, &block)
-    n = n.__to_int
-    return to_enum(:permutation, n) unless block
-    size = self.size
-    if n == 0
-      yield []
-    elsif 0 < n && n <= size
-      i = 0
-      while i<size
-        result = [self[i]]
-        if n-1 > 0
-          ary = self[0...i] + self[i+1..-1]
-          ary.permutation(n-1) do |c|
-            yield result + c
-          end
-        else
-          yield result
-        end
-        i += 1
-      end
-    end
-    self
+    __combination(:permutation, n, &block)
   end
 
   ##
@@ -497,28 +477,7 @@ class Array
   #    a.combination(5).to_a  #=> []   # no combinations of length 5
 
   def combination(n, &block)
-    n = n.__to_int
-    return to_enum(:combination, n) unless block
-    size = self.size
-    if n == 0
-      yield []
-    elsif n == 1
-      i = 0
-      while i<size
-        yield [self[i]]
-        i += 1
-      end
-    elsif n <= size
-      i = 0
-      while i<size
-        result = [self[i]]
-        self[i+1..-1].combination(n-1) do |c|
-          yield result + c
-        end
-        i += 1
-      end
-    end
-    self
+    __combination(:combination, n, &block)
   end
 
   ##
