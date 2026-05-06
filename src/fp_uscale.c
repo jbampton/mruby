@@ -1466,7 +1466,10 @@ mrb_read_float(const char *str, char **endp, double *fp)
     return FALSE;
   }
 
-  /* exponent */
+  /* exponent (optional). On malformed exponent ("5e", "5e+"), keep `a`
+     pointing at the 'e' so the caller's *endp reflects where parsing
+     stopped, and fall through using the mantissa-only result. */
+  int final_p = trunc - dp;
   if ((*p | 32) == 'e') {
     int e = 0;
     int exp_sign = 1;
@@ -1474,37 +1477,17 @@ mrb_read_float(const char *str, char **endp, double *fp)
     if (*p == '-') { exp_sign = -1; p++; }
     else if (*p == '+') p++;
 
-    if (!ISDIGIT(*p)) goto done;
-
-    while (ISDIGIT(*p)) {
-      if (e < 10000) e = e * 10 + (*p - '0');
-      p++;
+    if (ISDIGIT(*p)) {
+      while (ISDIGIT(*p)) {
+        if (e < 10000) e = e * 10 + (*p - '0');
+        p++;
+      }
+      final_p += e * exp_sign;
+      a = p;
     }
-
-    {
-      int final_p = e * exp_sign + trunc - dp;
-      double res;
-      if (d == 0) {
-        res = 0.0;
-      }
-      else if (final_p > 308) {
-        res = HUGE_VAL;
-      }
-      else if (final_p < -342 - nd) {
-        res = 0.0;
-      }
-      else {
-        res = parse_decimal(d, final_p);
-      }
-      if (sign < 0) res = -res;
-      *fp = res;
-    }
-    a = p;
-    goto done;
   }
 
   {
-    int final_p = trunc - dp;
     double res;
     if (d == 0) {
       res = 0.0;
@@ -1522,7 +1505,6 @@ mrb_read_float(const char *str, char **endp, double *fp)
     *fp = res;
   }
 
-done:
   if (endp) *endp = (char*)a;
   return TRUE;
 }
