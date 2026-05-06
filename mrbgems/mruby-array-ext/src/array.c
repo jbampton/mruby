@@ -33,8 +33,7 @@ typedef khash_t(ary_set) ary_set_t;
 struct mrb_combination_state {
   mrb_int *indices;
   mrb_int n, k; /* nPk, nCk */
-  mrb_bool permutation;
-  mrb_bool finished;
+  int mode;
 };
 
 static void
@@ -1532,6 +1531,11 @@ ary_deconstruct(mrb_state *mrb, mrb_value ary)
   return ary;
 }
 
+enum {
+  comb_finished             = 0,
+  comb_repeated_permutation = 1,
+  comb_repeated_combination = 2,
+};
 
 /*
  *  Internal method to initialize combination state.
@@ -1541,9 +1545,9 @@ static mrb_value
 ary_combination_init(mrb_state *mrb, mrb_value self)
 {
   mrb_int k;
-  mrb_bool permutation;
+  mrb_sym mode_sym;
 
-  mrb_get_args(mrb, "ib", &k, &permutation);
+  mrb_get_args(mrb, "ni", &mode_sym, &k);
 #if MRB_INT_MAX > SIZE_MAX
   if (k > SIZE_MAX) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "number too large");
@@ -1554,6 +1558,18 @@ ary_combination_init(mrb_state *mrb, mrb_value self)
     return mrb_nil_value();
   }
 
+  int mode;
+  switch (mode_sym) {
+  case MRB_SYM(repeated_permutation):
+    mode = comb_repeated_permutation;
+    break;
+  case MRB_SYM(repeated_combination):
+    mode = comb_repeated_combination;
+    break;
+  default:
+    mrb_raise(mrb, E_ARGUMENT_ERROR, "wrong mode");
+  }
+
   struct RData *d;
   struct mrb_combination_state *state;
   Data_Make_Struct(mrb, mrb->object_class, struct mrb_combination_state,
@@ -1561,8 +1577,7 @@ ary_combination_init(mrb_state *mrb, mrb_value self)
 
   state->k = k;
   state->n = RARRAY_LEN(self);
-  state->permutation = permutation;
-  state->finished = FALSE;
+  state->mode = mode;
   state->indices = (mrb_int*)mrb_calloc(mrb, k, sizeof(mrb_int));
 
   return mrb_obj_value(d);
@@ -1579,7 +1594,7 @@ ary_combination_next(mrb_state *mrb, mrb_value self)
   mrb_get_args(mrb, "d", &state, &mrb_combination_state_type);
 
   /* Check if iteration is complete */
-  if (state->finished) return mrb_nil_value();
+  if (state->mode == comb_finished) return mrb_nil_value();
 
   /* Validate array hasn't been modified during iteration */
   if (RARRAY_LEN(self) != state->n) {
@@ -1589,7 +1604,7 @@ ary_combination_next(mrb_state *mrb, mrb_value self)
   /* Validate current indices are still in bounds */
   for (mrb_int i = 0; i < state->k; i++) {
     if (state->indices[i] >= state->n) {
-      state->finished = TRUE;
+      state->mode = comb_finished;
       return mrb_nil_value();
     }
   }
@@ -1601,25 +1616,27 @@ ary_combination_next(mrb_state *mrb, mrb_value self)
     mrb_ary_push(mrb, result, p[state->indices[i]]);
   }
 
-  mrb_int pos = state->k - 1;
-
-  while (pos >= 0) {
-    state->indices[pos]++;
-    if (state->indices[pos] < state->n) break;
-    pos--;
-  }
-
-  if (pos < 0) {
-    state->finished = TRUE;
-  }
-  else {
-    /* Reset dependent indices */
-    mrb_int reset = state->permutation ? 0 : state->indices[pos];
-    for (pos++; pos < state->k; pos++) {
-      state->indices[pos] = reset;
+  switch (state->mode) {
+  case comb_repeated_permutation:
+  case comb_repeated_combination:
+    for (mrb_int i = state->k - 1; i >= 0; i--) {
+      state->indices[i]++;
+      if (state->indices[i] < state->n) {
+        /* Reset dependent indices */
+        mrb_int reset = (state->mode == comb_repeated_permutation) ? 0 : state->indices[i];
+        for (i++; i < state->k; i++) {
+          state->indices[i] = reset;
+        }
+        return result;
+      }
     }
+    break;
+  default: // it probably won’t happen, but just in case
+    result = mrb_nil_value();
+    break;
   }
 
+  state->mode = comb_finished;
   return result;
 }
 

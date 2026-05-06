@@ -642,9 +642,7 @@ class Array
   #   a = [1, 2, 3]
   #   a.repeated_combination(2).to_a #=> [[1,1],[1,2],[1,3],[2,2],[2,3],[3,3]]
   def repeated_combination(n, &block)
-    raise TypeError, "no implicit conversion into Integer" unless 0 <=> n
-    return to_enum(:repeated_combination, n) unless block
-    __repeated_combination(n, false, &block)
+    __combination(:repeated_combination, n, &block)
   end
 
   ##
@@ -667,14 +665,13 @@ class Array
   #   a = [1, 2]
   #   a.repeated_permutation(2).to_a #=> [[1,1],[1,2],[2,1],[2,2]]
   def repeated_permutation(n, &block)
-    n = n.__to_int
-    raise TypeError, "no implicit conversion into Integer" unless 0 <=> n
-    return to_enum(:repeated_permutation, n) unless block
-    __repeated_combination(n, true, &block)
+    __combination(:repeated_permutation, n, &block)
   end
 
-  def __repeated_combination(k, permutation, &block)
+  def __combination(mode, k, &block)
     k = k.__to_int
+    return to_enum(mode, k) unless block
+
     case k
     when 0
       yield []
@@ -686,7 +683,7 @@ class Array
         i += 1
       end
     else
-      if state = __combination_init(k, permutation)
+      if state = __combination_init(mode, k)
         # Use C iterator for complex cases
         while tmp = __combination_next(state)
           yield tmp
