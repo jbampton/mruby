@@ -44,6 +44,124 @@ mrb_hal_socket_final(mrb_state *mrb)
 }
 
 /*
+ * Error Handling
+ */
+
+/* Map a Winsock error code to a POSIX errno value. Each case is guarded
+ * with #ifdef so older MSVC CRTs that lack a particular Exxx still build;
+ * unknown codes fall back to EIO so mrb_sys_fail still produces a non-zero
+ * SystemCallError rather than reporting "success." */
+static int
+wsa_to_errno(int wsa_err)
+{
+  switch (wsa_err) {
+    case 0: return 0;
+#ifdef EINTR
+    case WSAEINTR:           return EINTR;
+#endif
+#ifdef EBADF
+    case WSAEBADF:           return EBADF;
+#endif
+#ifdef EACCES
+    case WSAEACCES:          return EACCES;
+#endif
+#ifdef EFAULT
+    case WSAEFAULT:          return EFAULT;
+#endif
+#ifdef EINVAL
+    case WSAEINVAL:          return EINVAL;
+#endif
+#ifdef EMFILE
+    case WSAEMFILE:          return EMFILE;
+#endif
+#ifdef EWOULDBLOCK
+    case WSAEWOULDBLOCK:     return EWOULDBLOCK;
+#endif
+#ifdef EINPROGRESS
+    case WSAEINPROGRESS:     return EINPROGRESS;
+#endif
+#ifdef EALREADY
+    case WSAEALREADY:        return EALREADY;
+#endif
+#ifdef ENOTSOCK
+    case WSAENOTSOCK:        return ENOTSOCK;
+#endif
+#ifdef EDESTADDRREQ
+    case WSAEDESTADDRREQ:    return EDESTADDRREQ;
+#endif
+#ifdef EMSGSIZE
+    case WSAEMSGSIZE:        return EMSGSIZE;
+#endif
+#ifdef EPROTOTYPE
+    case WSAEPROTOTYPE:      return EPROTOTYPE;
+#endif
+#ifdef ENOPROTOOPT
+    case WSAENOPROTOOPT:     return ENOPROTOOPT;
+#endif
+#ifdef EPROTONOSUPPORT
+    case WSAEPROTONOSUPPORT: return EPROTONOSUPPORT;
+#endif
+#ifdef EOPNOTSUPP
+    case WSAEOPNOTSUPP:      return EOPNOTSUPP;
+#endif
+#ifdef EAFNOSUPPORT
+    case WSAEAFNOSUPPORT:    return EAFNOSUPPORT;
+    case WSAEPFNOSUPPORT:    return EAFNOSUPPORT;
+    case WSAESOCKTNOSUPPORT: return EAFNOSUPPORT;
+#endif
+#ifdef EADDRINUSE
+    case WSAEADDRINUSE:      return EADDRINUSE;
+#endif
+#ifdef EADDRNOTAVAIL
+    case WSAEADDRNOTAVAIL:   return EADDRNOTAVAIL;
+#endif
+#ifdef ENETDOWN
+    case WSAENETDOWN:        return ENETDOWN;
+#endif
+#ifdef ENETUNREACH
+    case WSAENETUNREACH:     return ENETUNREACH;
+#endif
+#ifdef ENETRESET
+    case WSAENETRESET:       return ENETRESET;
+#endif
+#ifdef ECONNABORTED
+    case WSAECONNABORTED:    return ECONNABORTED;
+#endif
+#ifdef ECONNRESET
+    case WSAECONNRESET:      return ECONNRESET;
+#endif
+#ifdef ENOBUFS
+    case WSAENOBUFS:         return ENOBUFS;
+#endif
+#ifdef EISCONN
+    case WSAEISCONN:         return EISCONN;
+#endif
+#ifdef ENOTCONN
+    case WSAENOTCONN:        return ENOTCONN;
+#endif
+#ifdef ETIMEDOUT
+    case WSAETIMEDOUT:       return ETIMEDOUT;
+#endif
+#ifdef ECONNREFUSED
+    case WSAECONNREFUSED:    return ECONNREFUSED;
+#endif
+#ifdef EHOSTUNREACH
+    case WSAEHOSTUNREACH:    return EHOSTUNREACH;
+#endif
+#ifdef ENAMETOOLONG
+    case WSAENAMETOOLONG:    return ENAMETOOLONG;
+#endif
+    default:                 return EIO;
+  }
+}
+
+void
+mrb_hal_socket_set_errno_from_last_error(void)
+{
+  errno = wsa_to_errno(WSAGetLastError());
+}
+
+/*
  * Socket Control Operations
  */
 
@@ -54,6 +172,7 @@ mrb_hal_socket_set_nonblock(mrb_state *mrb, int fd, int nonblock)
   u_long mode = nonblock ? 1 : 0;
   int result = ioctlsocket(fd, FIONBIO, &mode);
   if (result != NO_ERROR) {
+    mrb_hal_socket_set_errno_from_last_error();
     return -1;
   }
   return 0;

@@ -29,6 +29,16 @@ void mrb_hal_socket_init(mrb_state *mrb);
 void mrb_hal_socket_final(mrb_state *mrb);
 
 /*
+ * Error Handling
+ */
+
+/* Translate the most recent socket-API error into a POSIX errno value and
+ * store it in errno. On Windows, this reads WSAGetLastError() and maps it;
+ * on POSIX, this is a no-op (errno is already set by the failed call).
+ * Call this immediately after a socket-API failure, before mrb_sys_fail. */
+void mrb_hal_socket_set_errno_from_last_error(void);
+
+/*
  * Socket Control Operations
  */
 

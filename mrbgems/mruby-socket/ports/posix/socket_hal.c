@@ -42,6 +42,16 @@ mrb_hal_socket_final(mrb_state *mrb)
 }
 
 /*
+ * Error Handling
+ */
+
+void
+mrb_hal_socket_set_errno_from_last_error(void)
+{
+  /* POSIX socket calls already set errno on failure; nothing to do. */
+}
+
+/*
  * Socket Control Operations
  */
 
