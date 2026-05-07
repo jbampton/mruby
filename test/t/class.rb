@@ -503,3 +503,39 @@ assert('module with extended callback') do
   assert_true BarBeingExtended.respond_to?(:answer)
   assert_equal 42, BarBeingExtended.answer
 end
+
+assert("inherited hook runs before block body") do
+  class A
+    def self.values
+      @values ||= []
+    end
+
+    def self.inherited(mod)
+      mod.values << 1
+    end
+  end
+
+  klass = Class.new(A) do
+    self.values << 2
+  end
+
+  assert_equal [1, 2], klass.values
+end
+
+assert("inherited hook runs before class body") do
+  class A
+    def self.values
+      @values ||= []
+    end
+
+    def self.inherited(mod)
+      mod.values << 1
+    end
+  end
+
+  class B < A
+    self.values << 2
+  end
+
+  assert_equal [1, 2], B.values
+end
