@@ -264,6 +264,11 @@ compile_charclass(re_compiler *c)
   emit(c, negated ? RE_NCLASS : RE_CLASS, (uint8_t)id, 0);
 }
 
+/* Maximum value for {n}/{n,m} quantifiers. Each unit becomes (min-1) +
+   (max-min) emitted copies of the inner atom; the cap keeps both the
+   parse free of integer overflow and the bytecode size sane. */
+#define RE_MAX_REPEAT 32768
+
 /* Parse {n}, {n,}, {n,m} quantifier. Returns min,max via pointers. */
 static mrb_bool
 parse_quantifier(re_compiler *c, int *min_out, int *max_out)
@@ -273,6 +278,7 @@ parse_quantifier(re_compiler *c, int *min_out, int *max_out)
 
   while (peek(c) >= '0' && peek(c) <= '9') {
     min = min * 10 + (next_char(c) - '0');
+    if (min > RE_MAX_REPEAT) compile_error(c, "quantifier too large");
   }
   if (peek(c) == ',') {
     next_char(c);
@@ -280,6 +286,7 @@ parse_quantifier(re_compiler *c, int *min_out, int *max_out)
       max = 0;
       while (peek(c) >= '0' && peek(c) <= '9') {
         max = max * 10 + (next_char(c) - '0');
+        if (max > RE_MAX_REPEAT) compile_error(c, "quantifier too large");
       }
     }
     /* else max = -1 (unlimited) */
