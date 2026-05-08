@@ -50,6 +50,8 @@ compile_error(re_compiler *c, const char *msg)
   c->code = NULL;
   mrb_free(c->mrb, c->classes);
   c->classes = NULL;
+  mrb_free(c->mrb, c->named_captures);
+  c->named_captures = NULL;
   if (c->stripped) mrb_free(c->mrb, c->stripped);
   c->stripped = NULL;
 
@@ -118,9 +120,20 @@ next_char(re_compiler *c)
   return (uint8_t)*c->p++;
 }
 
+/* Class IDs are stored in re_inst.a (uint8_t), so at most 256 distinct
+   character classes can be encoded.  Without this cap, class_capa
+   (uint16_t) overflows on doubling past 32768 (8 -> 16 -> ... -> 32768
+   -> 0), mrb_realloc with size 0 returns NULL, and the next memset
+   crashes; even before that, the (uint8_t)id cast at emit sites would
+   silently alias different classes. */
+#define RE_MAX_CLASSES 256
+
 static uint16_t
 add_class(re_compiler *c)
 {
+  if (c->num_classes >= RE_MAX_CLASSES) {
+    compile_error(c, "too many character classes");
+  }
   if (c->num_classes >= c->class_capa) {
     c->class_capa = c->class_capa ? c->class_capa * 2 : 8;
     c->classes = (re_charclass*)mrb_realloc(c->mrb, c->classes, sizeof(re_charclass) * c->class_capa);
