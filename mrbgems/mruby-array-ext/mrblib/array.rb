@@ -450,27 +450,7 @@ class Array
   #  a.permutation(0).to_a #=> [[]] # one permutation of length 0
   #  a.permutation(4).to_a #=> []   # no permutations of length 4
   def permutation(n=self.size, &block)
-    n = n.__to_int
-    return to_enum(:permutation, n) unless block
-    size = self.size
-    if n == 0
-      yield []
-    elsif 0 < n && n <= size
-      i = 0
-      while i<size
-        result = [self[i]]
-        if n-1 > 0
-          ary = self[0...i] + self[i+1..-1]
-          ary.permutation(n-1) do |c|
-            yield result + c
-          end
-        else
-          yield result
-        end
-        i += 1
-      end
-    end
-    self
+    __combination(:permutation, n, &block)
   end
 
   ##
@@ -497,28 +477,7 @@ class Array
   #    a.combination(5).to_a  #=> []   # no combinations of length 5
 
   def combination(n, &block)
-    n = n.__to_int
-    return to_enum(:combination, n) unless block
-    size = self.size
-    if n == 0
-      yield []
-    elsif n == 1
-      i = 0
-      while i<size
-        yield [self[i]]
-        i += 1
-      end
-    elsif n <= size
-      i = 0
-      while i<size
-        result = [self[i]]
-        self[i+1..-1].combination(n-1) do |c|
-          yield result + c
-        end
-        i += 1
-      end
-    end
-    self
+    __combination(:combination, n, &block)
   end
 
   ##
@@ -642,9 +601,7 @@ class Array
   #   a = [1, 2, 3]
   #   a.repeated_combination(2).to_a #=> [[1,1],[1,2],[1,3],[2,2],[2,3],[3,3]]
   def repeated_combination(n, &block)
-    raise TypeError, "no implicit conversion into Integer" unless 0 <=> n
-    return to_enum(:repeated_combination, n) unless block
-    __repeated_combination(n, false, &block)
+    __combination(:repeated_combination, n, &block)
   end
 
   ##
@@ -667,14 +624,13 @@ class Array
   #   a = [1, 2]
   #   a.repeated_permutation(2).to_a #=> [[1,1],[1,2],[2,1],[2,2]]
   def repeated_permutation(n, &block)
-    n = n.__to_int
-    raise TypeError, "no implicit conversion into Integer" unless 0 <=> n
-    return to_enum(:repeated_permutation, n) unless block
-    __repeated_combination(n, true, &block)
+    __combination(:repeated_permutation, n, &block)
   end
 
-  def __repeated_combination(k, permutation, &block)
+  def __combination(mode, k, &block)
     k = k.__to_int
+    return to_enum(mode, k) unless block
+
     case k
     when 0
       yield []
@@ -686,7 +642,7 @@ class Array
         i += 1
       end
     else
-      if state = __combination_init(k, permutation)
+      if state = __combination_init(mode, k)
         # Use C iterator for complex cases
         while tmp = __combination_next(state)
           yield tmp
