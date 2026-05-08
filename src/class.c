@@ -3077,10 +3077,6 @@ mrb_class_initialize(mrb_state *mrb, mrb_value obj)
 {
   struct RClass *c = mrb_class_ptr(obj);
 
-  if (c->iv) {
-    mrb_raise(mrb, E_TYPE_ERROR, "already initialized class");
-  }
-
   mrb_value a, b;
   mrb_get_args(mrb, "|C&", &a, &b);
   if (!mrb_nil_p(b)) {
@@ -3099,6 +3095,7 @@ mrb_class_new_class(mrb_state *mrb, mrb_value cv)
     super = mrb_obj_value(mrb->object_class);
   }
   mrb_value new_class = mrb_obj_value(mrb_class_new(mrb, mrb_class_ptr(super)));
+  mrb_class_inherited(mrb, mrb_class_ptr(super), mrb_class_ptr(new_class));
   mrb_sym mid = MRB_SYM(initialize);
   if (mrb_func_basic_p(mrb, new_class, mid, mrb_class_initialize)) {
     mrb_class_initialize(mrb, new_class);
@@ -3106,7 +3103,6 @@ mrb_class_new_class(mrb_state *mrb, mrb_value cv)
   else {
     mrb_funcall_with_block(mrb, new_class, mid, n, &super, blk);
   }
-  mrb_class_inherited(mrb, mrb_class_ptr(super), mrb_class_ptr(new_class));
   return new_class;
 }
 
