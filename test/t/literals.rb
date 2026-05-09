@@ -383,4 +383,20 @@ qwe]
   assert_equal :'{foo bar}', h
 end
 
+assert('operator override with negative integer literal', '#2557') do
+  cls = Class.new {
+    def +(x); ['add', x]; end
+    def -(x); ['sub', x]; end
+  }
+  q = cls.new
+  assert_equal ['add',  5], q +  5
+  assert_equal ['add', -5], q + -5
+  assert_equal ['sub',  5], q -  5
+  assert_equal ['sub', -5], q - -5
+  assert_equal ['add',  500], q +  500
+  assert_equal ['add', -500], q + -500
+  assert_equal ['sub',  500], q -  500
+  assert_equal ['sub', -500], q - -500
+end
+
 # Not Implemented ATM assert('Literals Regular expression', '8.7.6.5') do
