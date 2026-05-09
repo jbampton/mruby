@@ -982,6 +982,36 @@ mrb_socket_gethostname(mrb_state *mrb, mrb_value cls)
 
 /*
  * call-seq:
+ *   Socket.ip_address_list -> array
+ *
+ * Returns an array of `Addrinfo` objects representing all local IP addresses
+ * on every network interface (both IPv4 and IPv6).  Loopback and link-local
+ * addresses are included; the caller is responsible for filtering.
+ *
+ *   Socket.ip_address_list
+ *   #=> [#<Addrinfo: 127.0.0.1>, #<Addrinfo: ::1>, #<Addrinfo: 192.0.2.1>, ...]
+ *
+ * Backed by `getifaddrs(3)` on POSIX and `GetAdaptersAddresses` on Windows.
+ */
+static mrb_value
+mrb_socket_ip_address_list(mrb_state *mrb, mrb_value klass)
+{
+  (void)klass;
+  mrb_value sas = mrb_hal_socket_ip_address_list(mrb);
+  struct RClass *ainfo = mrb_class_get_id(mrb, MRB_SYM(Addrinfo));
+  mrb_value result = mrb_ary_new_capa(mrb, RARRAY_LEN(sas));
+  int arena_idx = mrb_gc_arena_save(mrb);
+  for (mrb_int i = 0; i < RARRAY_LEN(sas); i++) {
+    mrb_value sa = RARRAY_PTR(sas)[i];
+    mrb_value addr = mrb_obj_new(mrb, ainfo, 1, &sa);
+    mrb_ary_push(mrb, result, addr);
+    mrb_gc_arena_restore(mrb, arena_idx);
+  }
+  return result;
+}
+
+/*
+ * call-seq:
  *   Socket._accept(fd) -> [new_fd, sockaddr]
  *
  * Internal method to accept a connection on a socket file descriptor.
@@ -1352,6 +1382,7 @@ mrb_mruby_socket_gem_init(mrb_state* mrb)
   mrb_define_class_method_id(mrb, sock, MRB_SYM(_sockaddr_family), mrb_socket_sockaddr_family, MRB_ARGS_REQ(1));
   mrb_define_class_method_id(mrb, sock, MRB_SYM(_socket), mrb_socket_socket, MRB_ARGS_REQ(3));
   mrb_define_class_method_id(mrb, sock, MRB_SYM(gethostname), mrb_socket_gethostname, MRB_ARGS_NONE());
+  mrb_define_class_method_id(mrb, sock, MRB_SYM(ip_address_list), mrb_socket_ip_address_list, MRB_ARGS_NONE());
   mrb_define_class_method_id(mrb, sock, MRB_SYM(sockaddr_un), mrb_socket_sockaddr_un, MRB_ARGS_REQ(1));
   mrb_define_class_method_id(mrb, sock, MRB_SYM(socketpair), mrb_socket_socketpair, MRB_ARGS_REQ(3));
 

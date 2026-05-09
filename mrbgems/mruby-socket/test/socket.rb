@@ -36,3 +36,17 @@ assert('Socket#recvfrom') do
 end
 
 end   # win?
+
+# Socket.ip_address_list works on both POSIX (getifaddrs) and Windows
+# (GetAdaptersAddresses), so this test runs everywhere.
+assert('Socket.ip_address_list') do
+  list = Socket.ip_address_list
+  assert_kind_of Array, list
+  # Every host should have at least one address (loopback at minimum).
+  assert_true list.length >= 1
+  list.each do |ai|
+    assert_kind_of Addrinfo, ai
+    # Only AF_INET and AF_INET6 are returned.
+    assert_true [Socket::AF_INET, Socket::AF_INET6].include?(ai.afamily)
+  end
+end

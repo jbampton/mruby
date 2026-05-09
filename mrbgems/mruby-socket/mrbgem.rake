@@ -12,5 +12,6 @@ MRuby::Gem::Specification.new('mruby-socket') do |spec|
   if spec.for_windows?
     spec.linker.libraries << "wsock32"
     spec.linker.libraries << "ws2_32"
+    spec.linker.libraries << "iphlpapi"  # for GetAdaptersAddresses (Socket.ip_address_list)
   end
 end

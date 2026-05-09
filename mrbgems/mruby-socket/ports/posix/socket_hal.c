@@ -8,6 +8,7 @@
 */
 
 #include <mruby.h>
+#include <mruby/array.h>
 #include <mruby/string.h>
 #include <mruby/class.h>
 #include <mruby/error.h>
@@ -20,6 +21,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <ifaddrs.h>
 #include <string.h>
 #include <errno.h>
 
@@ -146,4 +148,28 @@ mrb_hal_socket_unix_path(mrb_state *mrb, const char *sockaddr, size_t socklen)
   }
 
   return mrb_str_new_cstr(mrb, ((const struct sockaddr_un*)sockaddr)->sun_path);
+}
+
+mrb_value
+mrb_hal_socket_ip_address_list(mrb_state *mrb)
+{
+  struct ifaddrs *ifap = NULL;
+  if (getifaddrs(&ifap) != 0) {
+    mrb_sys_fail(mrb, "getifaddrs");
+  }
+  mrb_value ary = mrb_ary_new(mrb);
+  int arena_idx = mrb_gc_arena_save(mrb);
+  for (struct ifaddrs *ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
+    if (ifa->ifa_addr == NULL) continue;
+    socklen_t salen;
+    switch (ifa->ifa_addr->sa_family) {
+      case AF_INET:  salen = sizeof(struct sockaddr_in);  break;
+      case AF_INET6: salen = sizeof(struct sockaddr_in6); break;
+      default: continue;
+    }
+    mrb_ary_push(mrb, ary, mrb_str_new(mrb, (const char*)ifa->ifa_addr, salen));
+    mrb_gc_arena_restore(mrb, arena_idx);
+  }
+  freeifaddrs(ifap);
+  return ary;
 }

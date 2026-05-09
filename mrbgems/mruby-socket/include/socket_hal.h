@@ -86,6 +86,15 @@ int mrb_hal_socket_socketpair(mrb_state *mrb, int domain, int type, int protocol
  * Returns: Unix socket path string, or raises exception if not supported */
 mrb_value mrb_hal_socket_unix_path(mrb_state *mrb, const char *sockaddr, size_t socklen);
 
+/* Enumerate local IP addresses for all network interfaces.
+ * Returns an Array of String values, each a binary sockaddr_in (AF_INET) or
+ * sockaddr_in6 (AF_INET6) ready to be passed to Addrinfo.new.  Loopback,
+ * link-local, and other interface-local addresses are included; the caller
+ * is responsible for filtering if needed.
+ * Raises a SystemCallError on failure of the underlying platform call
+ * (getifaddrs / GetAdaptersAddresses). */
+mrb_value mrb_hal_socket_ip_address_list(mrb_state *mrb);
+
 #ifdef __cplusplus
 }
 #endif

@@ -778,7 +778,6 @@ class Socket < BasicSocket
   end
 
   #def self.getnameinfo
-  #def self.ip_address_list
 
   #
   # call-seq:

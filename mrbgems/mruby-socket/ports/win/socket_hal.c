@@ -12,12 +12,14 @@
 #endif
 
 #include <mruby.h>
+#include <mruby/array.h>
 #include <mruby/string.h>
 #include <mruby/class.h>
 #include <mruby/error.h>
 #include "socket_hal.h"
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <iphlpapi.h>
 #include <windows.h>
 #include <errno.h>
 #include <string.h>
@@ -274,4 +276,45 @@ mrb_hal_socket_unix_path(mrb_state *mrb, const char *sockaddr, size_t socklen)
   mrb_raise(mrb, mrb_class_get_id(mrb, MRB_SYM(NotImplementedError)),
             "unix_path unsupported on Windows");
   return mrb_nil_value();
+}
+
+mrb_value
+mrb_hal_socket_ip_address_list(mrb_state *mrb)
+{
+  /* MSDN recommends 15 KiB as the initial buffer size to handle most
+     adapter configurations in a single call. */
+  ULONG buflen = 15000;
+  IP_ADAPTER_ADDRESSES *adapters = (IP_ADAPTER_ADDRESSES*)mrb_malloc(mrb, buflen);
+  ULONG ret = ERROR_BUFFER_OVERFLOW;
+  for (int retries = 0; retries < 3 && ret == ERROR_BUFFER_OVERFLOW; retries++) {
+    ret = GetAdaptersAddresses(AF_UNSPEC,
+            GAA_FLAG_SKIP_ANYCAST | GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_DNS_SERVER,
+            NULL, adapters, &buflen);
+    if (ret == ERROR_BUFFER_OVERFLOW) {
+      adapters = (IP_ADAPTER_ADDRESSES*)mrb_realloc(mrb, adapters, buflen);
+    }
+  }
+  if (ret != ERROR_SUCCESS) {
+    mrb_free(mrb, adapters);
+    mrb_raisef(mrb, mrb_class_get_id(mrb, MRB_SYM(SocketError)),
+               "GetAdaptersAddresses failed (Win32 error %u)", (unsigned int)ret);
+  }
+
+  mrb_value ary = mrb_ary_new(mrb);
+  int arena_idx = mrb_gc_arena_save(mrb);
+  for (IP_ADAPTER_ADDRESSES *ad = adapters; ad != NULL; ad = ad->Next) {
+    for (IP_ADAPTER_UNICAST_ADDRESS *ua = ad->FirstUnicastAddress; ua != NULL; ua = ua->Next) {
+      SOCKADDR *sa = ua->Address.lpSockaddr;
+      int salen;
+      switch (sa->sa_family) {
+        case AF_INET:  salen = sizeof(SOCKADDR_IN);  break;
+        case AF_INET6: salen = sizeof(SOCKADDR_IN6); break;
+        default: continue;
+      }
+      mrb_ary_push(mrb, ary, mrb_str_new(mrb, (const char*)sa, salen));
+      mrb_gc_arena_restore(mrb, arena_idx);
+    }
+  }
+  mrb_free(mrb, adapters);
+  return ary;
 }
