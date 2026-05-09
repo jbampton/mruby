@@ -635,7 +635,7 @@ search_method_owner(mrb_state *mrb, struct RClass *c, mrb_value obj, mrb_sym nam
     if (!mrb_respond_to(mrb, obj, MRB_SYM_Q(respond_to_missing))) {
       return FALSE;
     }
-    mrb_value ret = mrb_funcall_id(mrb, obj, MRB_SYM_Q(respond_to_missing), 2, mrb_symbol_value(name), mrb_true_value());
+    mrb_value ret = mrb_funcall_argv2(mrb, obj, MRB_SYM_Q(respond_to_missing), mrb_symbol_value(name), mrb_true_value());
     if (!mrb_test(ret)) {
       return FALSE;
     }

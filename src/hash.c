@@ -1268,7 +1268,7 @@ hash_default(mrb_state *mrb, mrb_value hash, mrb_value key)
 {
   if (MRB_RHASH_DEFAULT_P(hash)) {
     if (MRB_RHASH_PROCDEFAULT_P(hash)) {
-      return mrb_funcall_id(mrb, RHASH_PROCDEFAULT(hash), MRB_SYM(call), 2, hash, key);
+      return mrb_funcall_argv2(mrb, RHASH_PROCDEFAULT(hash), MRB_SYM(call), hash, key);
     }
     else {
       return RHASH_IFNONE(hash);
@@ -1545,7 +1545,7 @@ mrb_hash_default(mrb_state *mrb, mrb_value hash)
   if (MRB_RHASH_DEFAULT_P(hash)) {
     if (MRB_RHASH_PROCDEFAULT_P(hash)) {
       if (!given) return mrb_nil_value();
-      return mrb_funcall_id(mrb, RHASH_PROCDEFAULT(hash), MRB_SYM(call), 2, hash, key);
+      return mrb_funcall_argv2(mrb, RHASH_PROCDEFAULT(hash), MRB_SYM(call), hash, key);
     }
     else {
       return RHASH_IFNONE(hash);
