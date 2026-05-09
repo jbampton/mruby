@@ -1182,6 +1182,21 @@ MRB_API mrb_value mrb_funcall_id(mrb_state *mrb, mrb_value val, mrb_sym mid, mrb
  * @see mrb_funcall
  */
 MRB_API mrb_value mrb_funcall_argv(mrb_state *mrb, mrb_value val, mrb_sym name, mrb_int argc, const mrb_value *argv);
+/*
+ * Convenience wrappers for `mrb_funcall_argv` with a fixed argument count.
+ * Avoids the 16-slot fixed argv buffer used by the variadic `mrb_funcall_id`.
+ */
+static inline mrb_value
+mrb_funcall_argv1(mrb_state *mrb, mrb_value val, mrb_sym name, mrb_value a1)
+{
+  return mrb_funcall_argv(mrb, val, name, 1, &a1);
+}
+static inline mrb_value
+mrb_funcall_argv2(mrb_state *mrb, mrb_value val, mrb_sym name, mrb_value a1, mrb_value a2)
+{
+  const mrb_value argv[] = { a1, a2 };
+  return mrb_funcall_argv(mrb, val, name, 2, argv);
+}
 /**
  * Call existing Ruby functions with a block.
  */
