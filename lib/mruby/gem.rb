@@ -43,6 +43,7 @@ module MRuby
       def initialize(name, &block)
         @name = name
         @initializer = block
+        @post_user_config = nil
         @version = "0.0.0"
         @dependencies = []
         @conflicts = []
@@ -91,6 +92,7 @@ module MRuby
         build.libmruby_objs << @objs
 
         instance_eval(&@build_config_initializer) if @build_config_initializer
+        instance_eval(&@post_user_config) if @post_user_config
 
         repo_url = build.gem_dir_to_repo_url[dir]
         build.locks[repo_url]['version'] = version if repo_url
@@ -198,6 +200,19 @@ module MRuby
         Dir["#{@dir}/#{src_dir_from_gem_dir}/*{#{exts}}"].map do |f|
           objfile(f.relative_path_from(@dir).to_s.pathmap("#{build_dir}/%X"))
         end
+      end
+
+      # Register a block that runs after the user's `build.gem` block has
+      # been processed.  Intended for gem authors to fill in defaults that
+      # depend on user-supplied configuration (e.g. auto-detect a library
+      # only if the user didn't specify which to use).
+      #
+      # Initialization order:
+      #   1. block in `MRuby::Gem::Specification.new` (gem author)
+      #   2. block in `build.gem` (user's build_config)
+      #   3. block in `post_user_config` (gem author, this hook)
+      def post_user_config(&block)
+        @post_user_config = block
       end
 
       def build_settings(&blk)
