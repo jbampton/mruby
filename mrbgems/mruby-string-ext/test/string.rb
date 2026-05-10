@@ -667,6 +667,19 @@ assert('String#ord(UTF-8)') do
   assert_equal expect, got
 end if UTF8STRING
 
+assert('String#ord(UTF-8) rejects ill-formed sequences', '#2708') do
+  # overlong encodings (RFC 3629)
+  assert_raise(ArgumentError) { "\xC0\x80".ord }       # 2-byte overlong NUL
+  assert_raise(ArgumentError) { "\xE0\x80\x80".ord }   # 3-byte overlong NUL
+  assert_raise(ArgumentError) { "\xF0\x80\x80\x80".ord } # 4-byte overlong NUL
+  assert_raise(ArgumentError) { "\xE0\x9F\xBF".ord }   # overlong U+07FF as 3 bytes
+  # UTF-16 surrogates encoded as UTF-8
+  assert_raise(ArgumentError) { "\xED\xA0\x80".ord }   # U+D800
+  assert_raise(ArgumentError) { "\xED\xBF\xBF".ord }   # U+DFFF
+  # above U+10FFFF
+  assert_raise(ArgumentError) { "\xF4\x90\x80\x80".ord } # U+110000
+end if UTF8STRING
+
 assert('String#chr') do
   assert_equal "a", "abcde".chr
   assert_equal "h", "hello!".chr

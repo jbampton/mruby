@@ -33,7 +33,8 @@ int_chr_utf8(mrb_state *mrb, mrb_value num)
   mrb_int len;
   mrb_value str;
 
-  if (cp < 0 || 0x10FFFF < cp) {
+  /* Reject negative, above U+10FFFF, and UTF-16 surrogates (RFC 3629). */
+  if (cp < 0 || 0x10FFFF < cp || (0xD800 <= cp && cp <= 0xDFFF)) {
     mrb_raisef(mrb, E_RANGE_ERROR, "%v out of char range", num);
   }
   len = mrb_utf8_to_buf(utf8, (uint32_t)cp);
@@ -973,19 +974,26 @@ utf8code(mrb_state* mrb, const unsigned char* p, const unsigned char *e)
   if (p[0] < 0x80) return p[0];
 
   mrb_int len = mrb_utf8len_table[p[0]>>3];
+  mrb_int cp = -1;
   if (p+len <= e && len > 1 && (p[1] & 0xc0) == 0x80) {
     if (len == 2)
-      return ((p[0] & 0x1f) << 6) + (p[1] & 0x3f);
-    if ((p[2] & 0xc0) == 0x80) {
+      cp = ((p[0] & 0x1f) << 6) + (p[1] & 0x3f);
+    else if ((p[2] & 0xc0) == 0x80) {
       if (len == 3)
-        return ((p[0] & 0x0f) << 12) + ((p[1] & 0x3f) << 6)
-          + (p[2] & 0x3f);
-      if ((p[3] & 0xc0) == 0x80) {
-        if (len == 4)
-          return ((p[0] & 0x07) << 18) + ((p[1] & 0x3f) << 12)
-            + ((p[2] & 0x3f) << 6) + (p[3] & 0x3f);
+        cp = ((p[0] & 0x0f) << 12) + ((p[1] & 0x3f) << 6) + (p[2] & 0x3f);
+      else if (len == 4 && (p[3] & 0xc0) == 0x80) {
+        cp = ((p[0] & 0x07) << 18) + ((p[1] & 0x3f) << 12)
+              + ((p[2] & 0x3f) << 6) + (p[3] & 0x3f);
       }
     }
+  }
+  /* Reject overlong sequences, UTF-16 surrogates, and code points above
+     U+10FFFF (RFC 3629, Unicode D93b). */
+  if (cp >= 0 &&
+      ((len == 2 && cp >= 0x80) ||
+       (len == 3 && cp >= 0x800 && (cp < 0xD800 || 0xDFFF < cp)) ||
+       (len == 4 && cp >= 0x10000 && cp <= 0x10FFFF))) {
+    return cp;
   }
   mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid UTF-8 byte sequence");
   /* not reached */
