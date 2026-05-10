@@ -290,3 +290,48 @@ arbitrary-precision integers when included.
 (included in the `stdlib` gembox). Even with the gem,
 `ObjectSpace.each_object` has limited functionality compared
 to CRuby.
+
+## No Implicit Type Conversion (`to_int`, `to_str`, `to_ary`, ...)
+
+mruby does not perform implicit type conversion through methods
+like `to_int`, `to_str`, `to_ary`, or `to_hash`. CRuby uses these
+to let user-defined classes duck-type as built-in types — for
+example `Array#[]` calls `to_int` on its argument, `String#+` calls
+`to_str`, and multiple assignment calls `to_ary` on its right-hand
+side. mruby's built-in operations require the actual built-in type
+and do not consult these conversion methods.
+
+```ruby
+class MyInt;  def to_int; 42; end;     end
+class MyStr;  def to_str; "x"; end;    end
+class MyAry;  def to_ary; [1,2,3]; end; end
+```
+
+#### CRuby
+
+```
+[1,2,3][MyInt.new]   # => nil   (to_int called -> ary[42])
+"a" + MyStr.new      # => "ax"  (to_str called)
+a, b, c = MyAry.new  # => a=1, b=2, c=3   (to_ary called)
+```
+
+#### mruby
+
+```
+[1,2,3][MyInt.new]   # TypeError
+"a" + MyStr.new      # TypeError
+a, b, c = MyAry.new  # a=<MyAry obj>, b=nil, c=nil   (treated as single value)
+```
+
+Identity versions of `to_int`, `to_str`, `to_sym`, and `to_hash`
+remain defined on the corresponding built-in types so that
+`respond_to?(:to_str)`-style checks work for built-in instances.
+`Float#to_int` and `Array#to_ary` are intentionally not defined.
+
+Explicit conversion methods (`to_i`, `to_s`, `to_a`) work as in
+CRuby and are called by features such as string interpolation and
+the splat operator (`*obj`).
+
+This is a deliberate trade-off: implicit conversion forces every
+coercion site to go through method dispatch and can silently mask
+type-mismatch bugs.
