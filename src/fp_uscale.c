@@ -1204,7 +1204,7 @@ mrb_format_float(mrb_float f, char *buf, size_t buf_size, char fmt, int prec, ch
     /* nonzero finite */
     uint64_t d;
     int p, nd, exp;
-    char digs[20];
+    char digs[20] = {0};  /* gcc -Wmaybe-uninitialized false positive: count_digits() always returns >= 1 */
 
     if (fmt == 'S') {
       /* shortest representation for to_s */
