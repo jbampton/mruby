@@ -42,15 +42,15 @@ spi = SPI.new(
 
 #### Unit Names
 
-| Platform | Available Units                                     |
-|----------|-----------------------------------------------------|
-| ESP32    | `:ESP32_SPI2_HOST`, `:ESP32_HSPI_HOST`,             |
-|          | `:ESP32_SPI3_HOST`\*, `:ESP32_VSPI_HOST`\*          |
-| RP2040   | `:RP2040_SPI0`, `:RP2040_SPI1`                      |
+| Platform | Available Units                            |
+| -------- | ------------------------------------------ |
+| ESP32    | `:ESP32_SPI2_HOST`, `:ESP32_HSPI_HOST`,    |
+|          | `:ESP32_SPI3_HOST`\*, `:ESP32_VSPI_HOST`\* |
+| RP2040   | `:RP2040_SPI0`, `:RP2040_SPI1`             |
 
 \*SPI3 availability depends on ESP32 variant.
 
-### SPI#write(*data)
+### SPI#write(\*data)
 
 Write data to the SPI bus. Data can be Integer, Array, or String.
 
@@ -68,7 +68,7 @@ data = spi.read(4)         # transmits 0x00 while reading
 data = spi.read(4, 0xFF)   # transmits 0xFF while reading
 ```
 
-### SPI#transfer(*data, additional_read_bytes: 0)
+### SPI#transfer(\*data, additional_read_bytes: 0)
 
 Full-duplex transfer. Sends data and returns received bytes.
 Use `additional_read_bytes:` to append zero-filled read bytes.

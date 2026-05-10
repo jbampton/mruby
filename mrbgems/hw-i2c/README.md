@@ -44,10 +44,10 @@ i2c = I2C.new(
 
 #### Unit Names
 
-| Platform | Available Units                 |
-|----------|---------------------------------|
-| ESP32    | `:ESP32_I2C0`, `:ESP32_I2C1`    |
-| RP2040   | `:RP2040_I2C0`, `:RP2040_I2C1`  |
+| Platform | Available Units                |
+| -------- | ------------------------------ |
+| ESP32    | `:ESP32_I2C0`, `:ESP32_I2C1`   |
+| RP2040   | `:RP2040_I2C0`, `:RP2040_I2C1` |
 
 On RP2040, if `sda_pin` or `scl_pin` is -1, the Pico SDK default pins are used.
 
