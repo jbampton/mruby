@@ -134,6 +134,7 @@ struct mrb_parser_state {
   mrb_sym* filename_table;
   uint16_t filename_table_length;
   uint16_t current_filename_index;
+  uint16_t prev_file_lineno;    /* saved lineno before partial_hook file switch */
 
   /* Variable-sized node management */
   mrb_ast_node *nvars;

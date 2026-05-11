@@ -28,3 +28,20 @@ assert('embedded document with invalid terminator') do
   assert_equal "#{a.path}:3:0: embedded document meets end of file", result.chomp
   assert_equal 1, $?.exitstatus
 end
+
+assert('debug info preserves line/filename across multiple inputs. #1316') do
+  a = Tempfile.new(['a', '.rb'])
+  b = Tempfile.new(['b', '.rb'])
+  out = Tempfile.new(['out', '.mrb'])
+  a.write("# line 1\n# line 2\nputs \"from a\"\n# line 4\nundefined_in_a\n")
+  a.flush
+  b.write("# b line 1\nputs \"from b\"\n")
+  b.flush
+  `#{cmd('mrbc')} -g -o #{out.path} #{a.path} #{b.path}`
+  assert_equal 0, $?.exitstatus
+  result = `#{cmd('mruby')} -b #{out.path} 2>&1`
+  # Error should point at a.rb line 5 (the `undefined_in_a` line),
+  # not b.rb or a different line within a.rb.
+  assert_include result, "#{a.path}:5:"
+  assert_not_include result, b.path
+end

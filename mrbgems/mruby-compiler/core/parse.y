@@ -151,9 +151,13 @@ init_var_header(struct mrb_ast_var_header *header, parser_state *p, enum node_ty
   header->filename_index = p->current_filename_index;
   header->node_type = (uint8_t)type;
 
-  /* Handle file boundary edge case */
+  /* Handle file boundary edge case: this node is reduced from a token that
+     was buffered by bison lookahead before partial_hook switched the file,
+     so attribute it to the previous file at its last known lineno rather
+     than the new file at lineno=0. */
   if (p->lineno == 0 && p->current_filename_index > 0) {
     header->filename_index--;
+    header->lineno = p->prev_file_lineno;
   }
 }
 
@@ -7658,6 +7662,10 @@ mrb_parser_set_filename(struct mrb_parser_state *p, const char *f)
 
   sym = mrb_intern_cstr(p->mrb, f);
   p->filename_sym = sym;
+  /* Save current lineno so that AST nodes produced from a bison lookahead
+     across the file boundary (in partial_hook) can recover the correct
+     line in init_var_header instead of recording lineno=0. */
+  p->prev_file_lineno = p->lineno;
   p->lineno = (p->filename_table_length > 0)? 0 : 1;
 
   for (i = 0; i < p->filename_table_length; i++) {
