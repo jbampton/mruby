@@ -343,16 +343,21 @@ module MRuby
       opt = @compile_options % {funcname: funcname}
       opt << " -S" if cdump
       opt << " -s" if static
+      # Have mrbc write to a private tempfile (-o) instead of stdout (-o-)
+      # to avoid pipe-inheritance races with parallel rake on Windows MinGW,
+      # where unrelated _pp build-progress lines from sibling workers can
+      # leak into the captured stdout and corrupt the generated C file.
+      tmpout = "#{out.path}.#{funcname}.mrbcout"
+      opt = opt.sub(/\s-o-(?=\s|\z)/, %Q[ -o "#{filename tmpout}"])
       cmd = %["#{filename @command}" #{opt} #{filename(infiles).map{|f| %["#{f}"]}.join(' ')}]
       puts cmd if Rake.verbose
-      IO.popen(cmd, 'r') do |io|
-        out.puts io.read
-      end
-      # if mrbc execution fail, drop the file
-      unless $?.success?
+      unless system(cmd)
+        rm_f tmpout
         rm_f out.path
         fail "Command failed with status (#{$?.exitstatus}): [#{cmd[0,42]}...]"
       end
+      out.write File.binread(tmpout)
+      rm_f tmpout
     end
   end
 
