@@ -11,10 +11,10 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t size) {
     if (!mrb) {
         return 0;
     }
-    
+
     /* mrb_load_irep_buf returns the result of the last expression */
     mrb_load_irep_buf(mrb, Data, size);
-    
+
     mrb_close(mrb);
     return 0;
 }

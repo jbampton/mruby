@@ -17,10 +17,10 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t size) {
     if (fmt_len > size - 1) {
         fmt_len = size - 1;
     }
-    
+
     mrb_value fmt = mrb_str_new(mrb, (const char *)(Data + 1), fmt_len);
     mrb_value str = mrb_str_new(mrb, (const char *)(Data + 1 + fmt_len), size - 1 - fmt_len);
-    
+
     /* Target String#unpack */
     mrb_funcall(mrb, str, "unpack", 1, fmt);
 

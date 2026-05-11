@@ -39,12 +39,12 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t size) {
                 case 0: mrb_funcall(mrb, b1, "+", 1, b2); break;
                 case 1: mrb_funcall(mrb, b1, "-", 1, b2); break;
                 case 2: mrb_funcall(mrb, b1, "*", 1, b2); break;
-                case 3: 
+                case 3:
                     if (mrb_test(mrb_funcall(mrb, b2, "!=", 1, mrb_fixnum_value(0)))) {
                         mrb_funcall(mrb, b1, "/", 1, b2);
                     }
                     break;
-                case 4: 
+                case 4:
                     if (mrb_test(mrb_funcall(mrb, b2, "<", 1, mrb_fixnum_value(1000)))) {
                        mrb_funcall(mrb, b1, "**", 1, b2);
                     }

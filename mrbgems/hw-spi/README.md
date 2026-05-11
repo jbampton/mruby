@@ -42,11 +42,11 @@ spi = SPI.new(
 
 #### Unit Names
 
-| Platform | Available Units                                     |
-|----------|-----------------------------------------------------|
-| ESP32    | `:ESP32_SPI2_HOST`, `:ESP32_HSPI_HOST`,             |
-|          | `:ESP32_SPI3_HOST`\*, `:ESP32_VSPI_HOST`\*          |
-| RP2040   | `:RP2040_SPI0`, `:RP2040_SPI1`                      |
+| Platform | Available Units                            |
+| -------- | ------------------------------------------ |
+| ESP32    | `:ESP32_SPI2_HOST`, `:ESP32_HSPI_HOST`,    |
+|          | `:ESP32_SPI3_HOST`\*, `:ESP32_VSPI_HOST`\* |
+| RP2040   | `:RP2040_SPI0`, `:RP2040_SPI1`             |
 
 \*SPI3 availability depends on ESP32 variant.
 

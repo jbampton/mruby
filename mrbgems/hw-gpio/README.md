@@ -36,14 +36,14 @@ end
 
 These flags can be combined with bitwise OR.
 
-| Flag                | Value  | Description                |
-|---------------------|--------|----------------------------|
-| `GPIO::IN`          | `0x01` | Input mode                 |
-| `GPIO::OUT`         | `0x02` | Output mode                |
-| `GPIO::HIGH_Z`      | `0x04` | High-impedance (tri-state) |
-| `GPIO::PULL_UP`     | `0x08` | Enable pull-up resistor    |
-| `GPIO::PULL_DOWN`   | `0x10` | Enable pull-down resistor  |
-| `GPIO::OPEN_DRAIN`  | `0x20` | Enable open-drain output   |
+| Flag               | Value  | Description                |
+| ------------------ | ------ | -------------------------- |
+| `GPIO::IN`         | `0x01` | Input mode                 |
+| `GPIO::OUT`        | `0x02` | Output mode                |
+| `GPIO::HIGH_Z`     | `0x04` | High-impedance (tri-state) |
+| `GPIO::PULL_UP`    | `0x08` | Enable pull-up resistor    |
+| `GPIO::PULL_DOWN`  | `0x10` | Enable pull-down resistor  |
+| `GPIO::OPEN_DRAIN` | `0x20` | Enable open-drain output   |
 
 ### GPIO.new
 

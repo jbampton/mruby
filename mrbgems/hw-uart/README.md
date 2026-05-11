@@ -35,13 +35,13 @@ end
 
 ### Constants
 
-| Constant                      | Value | Description         |
-|-------------------------------|-------|---------------------|
-| `UART::PARITY_NONE`           | `0`   | No parity           |
-| `UART::PARITY_EVEN`           | `1`   | Even parity         |
-| `UART::PARITY_ODD`            | `2`   | Odd parity          |
-| `UART::FLOW_CONTROL_NONE`     | `0`   | No flow control     |
-| `UART::FLOW_CONTROL_RTS_CTS`  | `1`   | Hardware flow ctrl  |
+| Constant                     | Value | Description        |
+| ---------------------------- | ----- | ------------------ |
+| `UART::PARITY_NONE`          | `0`   | No parity          |
+| `UART::PARITY_EVEN`          | `1`   | Even parity        |
+| `UART::PARITY_ODD`           | `2`   | Odd parity         |
+| `UART::FLOW_CONTROL_NONE`    | `0`   | No flow control    |
+| `UART::FLOW_CONTROL_RTS_CTS` | `1`   | Hardware flow ctrl |
 
 ### UART.new
 
@@ -62,7 +62,7 @@ uart = UART.new(
 #### Unit Names
 
 | Platform | Available Units                                  |
-|----------|--------------------------------------------------|
+| -------- | ------------------------------------------------ |
 | ESP32    | `:ESP32_UART0`, `:ESP32_UART1`, `:ESP32_UART2`\* |
 | RP2040   | `:RP2040_UART0`, `:RP2040_UART1`                 |
 
