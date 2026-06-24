@@ -109,7 +109,7 @@ repos:
         name: run codespell
         description: check spelling with codespell
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.48.0
+    rev: v0.49.0
     hooks:
       - id: markdownlint
         name: run markdownlint
@@ -118,7 +118,7 @@ repos:
         types: [markdown]
         files: \.md$
   - repo: https://github.com/rubocop/rubocop
-    rev: v1.86.1
+    rev: v1.88.0
     hooks:
       - id: rubocop
         name: run rubocop
